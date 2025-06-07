@@ -1,0 +1,477 @@
+Міністерство освіти і науки України
+Харківський національний університет радіоелектроніки
+Кафедра програмної інженерії
+
+
+
+
+
+Лабораторна робота №2
+з дисципліни: «Архітектура програмного забезпечення»
+на тему: «Розробка програмної архітектури, створення та відлагодження программного коду серверної частини програмної системи»
+
+
+
+
+
+
+Виконала:
+ст. гр. ПЗПІ-22-2
+Моссур Дар'я Євгенівна
+
+Перевірив:
+ст. викладач кафедри ПІ
+Сокорчук Ігор Петрович 
+
+
+
+
+Харків 2025
+ 
+Тема проєкту: Програмна система для донорства
+Мета роботи:
+Розробити серверну частину програмної системи, що автоматизує процеси, пов’язані з донорством крові, включаючи взаємодію користувачів різних ролей: адміністратора, медичного працівника та донора. Система має підтримувати функціонал, що дозволяє медикам реєструвати донорів, керувати інформацією про запаси крові, створювати та оновлювати дані про події з донації, а також переглядати та змінювати статус крові залежно від її використання чи зіпсованості. Донори повинні мати змогу переглядати доступні івенти, записуватись на них, переглядати власну історію записів, та, за необхідності, видаляти свій профіль. 
+Хід роботи:
+На основі визначених функціональних вимог було спроєктовано архітектуру системи, де бекенд побудований мовою Java із використанням Spring Boot, а база даних — на основі PostgreSQL. Для візуалізації структури програмної системи були створені відповідні UML-діаграми: діаграма розгортання, діаграма компонентів. Окремо було побудовано ER-діаграму, яка відображає структуру та зв’язки між сутностями в базі даних. Було розроблено REST API з описом маршрутів для обробки запитів до серверної частини. У ході реалізації бізнес-логіки використовувалися математичні методи, наприклад, автоматичне зменшення потреби медичного закладу в певному типі крові при резервуванні донорського зразка.  
+
+1 ОПИС АРХІТЕКТУРИ СИСТЕМИ
+
+	Архітектура системи побудована на основі клієнт-серверної моделі з багаторівневою структурою, що забезпечує масштабованість, безпеку та розділення обов’язків між компонентами. Система включає наступні основні складові:
+	Клієнтська частина:
+	- Веб-інтерфейс: реалізований з використанням HTML, CSS, JavaScript; забезпечує доступ до функцій системи через браузер.
+	- Мобільний застосунок: розроблений мовою Kotlin із використанням Android SDK та Jetpack Compose; забезпечує зручний інтерфейс для донорів.
+	Серверна частина:
+	- Побудована на Java 21 із застосуванням Spring Framework (Spring Boot, Spring Web).
+	- Виконує основну логіку обробки запитів, взаємодію з базою даних і IoT-пристроями, а також реалізує REST API для обміну інформацією з клієнтами.
+	База даних:
+	- Використовується PostgreSQL для зберігання інформації про користувачів, події, донорства, потреби в крові, холодильники тощо.
+	- Дані зберігаються у реляційній формі згідно з логічною моделлю, описаною у вигляді ER-діаграми.
+	IoT-пристрої (розумні холодильники):
+	- Реалізовані як окремі сервіси на Java 21 із Spring Boot.
+	- Передають дані про умови зберігання крові на сервер, а також отримують команди з серверної частини.
+	Комунікація між компонентами системи відбувається через HTTP/HTTPS-запити, що дозволяє забезпечити безпечний доступ до даних, а також підтримує розподілену інфраструктуру.	
+ 
+2 ПОБУДОВА ДІАГРАМИ РОЗГОРТАННЯ
+
+	2.1. Побудова UML діаграми розгортання (Deployment Diagram)	
+	Діаграма розгортання була створена з метою візуалізації фізичного розміщення основних компонентів програмної системи та взаємодії між ними на рівні апаратного та програмного забезпечення. Вона демонструє, як розгорнуті ключові частини системи на різних вузлах, які технології використовуються на кожному рівні, а також способи обміну даними між компонентами.
+	Основні елементи діаграми:
+	- Client Device:
+	Веб-браузер, який працює з фронтенд-частиною, реалізованою з використанням HTML, CSS, JavaScript. Мобільний застосунок, розроблений на Kotlin з використанням Jetpack Compose та Android SDK.
+	- Web Server: 
+	Бекенд реалізований на Java 21 із використанням Spring Framework, Spring Boot, Spring Web. Обробляє запити від веб-інтерфейсу та мобільного застосунку 	через REST API.
+	- Database Server (сервер бази даних):
+	Сервер із встановленою СУБД PostgreSQL, який зберігає всі структуровані дані системи. Бекенд-сервер напряму взаємодіє з базою через JDBC.
+	- IoT Device:
+	У ролі IoT-пристроїв виступають розумні холодильники або датчики, які також реалізовані на Java 21 із Spring Boot. Пристрої можуть передавати дані (наприклад, температуру зберігання крові) на бекенд та отримувати команди чи оновлення статусу.
+	Технічна взаємодія відбувається таким чином: клієнти (веб або мобільний застосунок) надсилають запити до бекенду по протоколу HTTP/HTTPS. Бекенд взаємодіє з базою даних через стандартні засоби доступу до PostgreSQL. IoT-пристрої та бекенд обмінюються інформацією через REST API.
+	Діаграму розгортання зображено у вигляді UML Deployment Diagram на рисунку 2.
+Рисунок 2 - UML діаграма розгортання (Deployment Diagram)	
+ 
+3 ОПИС АРХІТЕКТУРИ СЕРВЕРНОЇ ЧАСТИНИ
+
+	3.1. Опис загальної архітектури серверної частини
+	Під час розробки програмної системи для управління процесами донорства крові було прийнято низку інженерних рішень, що забезпечують надійність, масштабованість та підтримуваність проєкту. Система побудована за принципами багаторівневої архітектури, що передбачає чітке розділення відповідальностей між клієнтською частиною, серверною логікою та базою даних.
+	Серверна частина системи BloodDo реалізована на мові Java з використанням фреймворку Spring Boot. Комунікація між клієнтом (веб- або мобільним додатком) та сервером відбувається через REST API, реалізоване відповідно до стандартів HTTP. Серверна логіка відповідає за обробку запитів користувачів, керування базою даних PostgreSQL, авторизацію, валідацію та виконання бізнес-правил.	
+	3.2. Серверна логіка системи 	
+	Серверна частина відповідає за обробку запитів від клієнта, наприклад: реєстрація донорів, створення подій донації, оновлення потреб у крові, автентифікацію та авторизацію користувачів за ролями, створення та обробку нотифікацій, взаємодію з базою даних для зберігання й отримання інформації.
+	3.2.1. Опис компонентів 
+	Система має чіткий поділ логіки за ролями: Admin, Donor, Medic. Кожна з ролей має доступ до певного набору функціональностей, реалізованих через відповідні API-ендпоінти.
+	Компонент "Admin"
+	Відповідає за керування: медичними закладами (створення, редагування, видалення), медичним персоналом (створення, оновлення).
+	Приклади ендпоінтів:
+	POST /admin/hospital – створити лікарню;
+	PUT /admin/medic – оновити медичного працівника.
+	Компонент "Donor"
+	Надає доступ до функцій для донорів, а саме: перегляд доступних подій з донації, запис/скасування участі в івентах, перегляд історії донацій, редагування власного профілю.
+	Приклади ендпоінтів:
+	GET /donor/events – переглянути всі доступні івенти;
+	POST /donor/event/appointment – записатися на івент.
+	Компонент "Medic"
+	Надає функції для медичних працівників: створення/редагування донорів, управління подіями з донації, моніторинг холодильників (створення, редагування, перегляд), ведення обліку крові (реєстрація донацій, зміна статусу крові, перегляд запасів).
+	Приклади ендпоінтів:
+	POST /medic/donation – створити запис про донацію;
+	GET /medic/fridge/metrics – переглянути метрики холодильника за певний період.
+	3.3. Математичні методи обробки даних у серверній частині
+	Одним із прикладів реалізації бізнес-логіки в серверній частині є оновлення статусу одиниці крові при її резервуванні. У процесі зміни статусу відбувається також автоматична актуалізація потреби в крові відповідного типу в конкретному медичному закладі. Після встановлення нового статусу "зарезервовано", система отримує поточного медика, що виконує дію, знаходить відповідний медичний заклад, визначає тип крові та резус-фактор, зменшує показник потреби в цьому типі крові на стандартний об’єм однієї донації (BLOOD_AMOUNT_PER_DONATION), оновлює інформацію в базі даних.
+	Ця обробка реалізує умовно-алгоритмічний підхід, який включає в себе використання логічних умов (if, switch) для визначення типу крові, виконання арифметичних операцій для оновлення залишків, звернення до контексту авторизації для визначення медичного закладу, забезпечення цілісності та актуальності даних у пов’язаних сутностях (Blood, BloodNeeds, MedicUser).
+    public BloodDto updateBloodStatus(Integer id, BloodStatus status) {
+        Blood blood = bloodRepository.getReferenceById(id);
+        blood.setUseStatus(status);
+        if (!blood.getSpoiled() && status == BloodStatus.RESERVED) {
+            String username = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            MedicUser medic = medicUserRepository.getByUser_username(username);
+            BloodNeeds bloodNeeds = bloodNeedsRepository.getByHospitalId(medic.getHospital().getId());
+            switch (blood.getBloodType()) {
+                case O -> {
+                    if (blood.getRhesusFactor()) {
+                        bloodNeeds.setOPositive(bloodNeeds.getOPositive() - BLOOD_AMOUNT_PER_DONATION);
+                    } else {
+                        bloodNeeds.setONegative(bloodNeeds.getONegative() - BLOOD_AMOUNT_PER_DONATION);
+                    }
+                }
+                case A -> {
+                    if (blood.getRhesusFactor()) {
+                        bloodNeeds.setAPositive(bloodNeeds.getAPositive() - BLOOD_AMOUNT_PER_DONATION);
+                    } else {
+                        bloodNeeds.setANegative(bloodNeeds.getANegative() - BLOOD_AMOUNT_PER_DONATION);
+                    }
+                }
+                case B -> {
+                    if (blood.getRhesusFactor()) {
+                        bloodNeeds.setBPositive(bloodNeeds.getBPositive() - BLOOD_AMOUNT_PER_DONATION);
+                    } else {
+                        bloodNeeds.setBNegative(bloodNeeds.getBNegative() - BLOOD_AMOUNT_PER_DONATION);
+                    }
+                }
+                case AB -> {
+                    if (blood.getRhesusFactor()) {
+                        bloodNeeds.setAbPositive(bloodNeeds.getAbPositive() - BLOOD_AMOUNT_PER_DONATION);
+                    } else {
+                        bloodNeeds.setAbNegative(bloodNeeds.getAbNegative() - BLOOD_AMOUNT_PER_DONATION);
+                    }
+                }
+            }
+            bloodNeedsRepository.saveAndFlush(bloodNeeds);
+        }
+        return new BloodDto(bloodRepository.saveAndFlush(blood));
+    }
+
+ 
+4 ПОБУДОВА ДІАГРАМИ ПРЕЦЕДЕНТІВ
+
+	4.1. Побудова UML діаграми прецедентів Use Case Diagram
+	Система має три ролі: адмін, медик і донор. Розглянемо більш детально функції, які доступні для кодної з ролей в системі. 
+	Функціонал, який доступний для донора: 
+	- переглядати інформацію про всі наявні події (івенти) з донації крові, 
+	- записатись на івент,
+	- переглянути інформацію про всі івенти, на які донор записався, 
+	- відмінити запис на івент.  
+	Також, як користувач, донор може:  
+	- змінити пароль, 
+	- змінтити мову, 
+	- видалити себе з системи, при цьому видаляться лише його персональні дані, але вся задоначена раніше кров збережеться в системі анонімно,
+	- переглядати всі нотифікації, а також всі нові нотифікації. 
+	Функціонал, який доступний для медичного працівника: 
+	- переглядати та редагувати потреби крові свого медичного закладу,  
+	- створювати, редагувати та видаляти інформацію про донора, 
+	- створювати та редагувати інформацію про заплановану подію з донації крові, а також переглядати інформацію про такі події та скільки донорів зареєструвалось на цю подію, 
+	- реєструвати в системі новий холодильник, оновлювати інформацію про нього, а також переглядати інформацію про всі холодильники в системі,
+	- переглядати інформацію про метрики певного холодильника в певний проміжок часу, 
+	- створювати запис про збір (донацію) крові у донора,  
+	- переглядати інформацію про запаси крові,  
+	- змінити статус крові (вільний, зарезервований, використаний, або викинутий),  
+	- змінити інформацію про те, чи кров зіпсована з не залежних від умов зберігання причин. На основі цього було побудовано Use Case diagrams, які розташовані на рисунках 4.1, 4.2, 4.3 нижче. 
+Рисунок 4.1 – Use Case diagram (Donor)
+Рисунок 4.2 – Use Case diagram (Admin) 
+Рисунок 4.2 – Use Case diagram (Medic)
+
+5 ПОБУДОВА ER-ДІАГРАМИ 
+
+	5.1. Структура бази даних
+	База даних побудована за реляційною моделлю та містить логічно пов’язані таблиці, що відображають усі основні сутності предметної області: користувачів, донорів, медичних працівників, лікарні, одиниці крові, події донорства, холодильники для зберігання, а також поточні потреби в крові. Схема спроєктована з урахуванням нормалізації даних. Кожна таблиця має чіткі зв’язки з іншими таблицями, що забезпечує повну трасованість усіх процесів — від моменту реєстрації донора до використання його донації в лікарні. Крім того, система веде історію метрик холодильників, що дозволяє перевірити умови зберігання крові для дотримання стандартів якості. У сукупності ці інженерні рішення дозволили побудувати стабільну, безпечну та зручну для користування систему, здатну підтримувати повний життєвий цикл донацій крові. Побудована ER-діаграма зображена на рисунку 1.
+	5.2. Опис ER-діаграми програмної системи
+	Сутність users є центральною і представляє загальних користувачів системи, які можуть мати різні ролі, зокрема адміністратора, медика або донора. Відповідно до цього, таблиця authorities пов’язана з users зв’язком типу "один до багатьох" за полем username, дозволяючи одному користувачу мати кілька повноважень.
+	Кожен користувач може бути або донором, або медичним працівником. Дані про донорів зберігаються в таблиці donor_data, де зберігається ім’я, група крові, резус-фактор, контактний номер та згода на обробку персональних даних. Зв’язок між users та donor_data є один до одного: кожному запису донора відповідає лише один користувач. Аналогічно, сутність medic_user також пов’язана з users зв’язком один до одного і містить додаткову інформацію про медичних працівників, зокрема їхнє ім’я, номер телефону та прив’язку до лікарні через зовнішній ключ hospital_id.
+Рисунок 1 – ER-діаграма програмної системи для донорства
+	Повідомлення (notifications) асоційовані з користувачами через поле target_user, що створює зв’язок один до багатьох: кожен користувач може отримати багато сповіщень. Система також дозволяє адміністраторам або медикам створювати події донації, які фіксуються в таблиці donation_event та містять дату, опис події, статус і автора створення. Кожна така подія пов’язана з одним користувачем через поле created_by.
+	Коли донор бере участь у події, створюється запис у таблиці donation, що містить зв’язки з відповідним донором (donor_id) і подією (event_id). Це дає змогу фіксувати, хто саме і в межах якої події зробив донацію. Один донор може зробити кілька донацій, тому між donor_data та donation зв’язок один до багатьох. Так само, одна подія може містити багато донацій.
+	Кожна донація, в свою чергу, відповідає одному запису в таблиці blood, що містить інформацію про групу крові, резус-фактор, стан крові (зіпсована чи ні), штрихкод, статус використання, холодильник зберігання та автора внесення даних. Між donation і blood зв’язок один до одного, адже кожна донація породжує одну одиницю крові. Зв’язок blood з fridge реалізується через зовнішній ключ fridge_id, що формує зв’язок один до багатьох: в одному холодильнику може зберігатися багато одиниць крові.
+	Сутність fridge зберігає інформацію про холодильники, включаючи серійний номер, назву, діапазон температур і вологості. Кожен холодильник має багато записів в таблиці fridge_metrics, які зберігають показники температури й вологості у певні моменти часу. Таким чином, fridge та fridge_metrics поєднані зв’язком один до багатьох.
+	Таблиця hospital є базою даних медичних закладів. Кожен запис медичного працівника (medic_user) пов’язаний із певною лікарнею через hospital_id. Зв’язок один до багатьох: одна лікарня може мати багато працівників. Крім того, таблиця blood_needs фіксує потребу конкретного медичного закладу в одиницях крові кожної групи і також пов’язана з hospital через hospital_id. Це дозволяє враховувати актуальні потреби кожної установи окремо.
+	Наведемо опис атрибутів для кожної таблиці:
+	Таблиця Users:
+	- username (PK) — унікальний логін.
+	- password — хеш паролю.
+	- enabled — чи активований акаунт.
+	- created_at — дата створення.
+	- ui_language — мова інтерфейсу.
+	Таблиця Authorities:
+	- username (FK → users.username) — ім’я користувача.
+	- authority — роль користувача (наприклад, ROLE_ADMIN, ROLE_MEDIC, тощо).
+	Таблиця donor_data:
+	- id (PK) — унікальний ідентифікатор.
+	- first_name, last_name — ім’я та прізвище.
+	- blood_type, rhesus_factor — група крові та резус-фактор.
+	- phone_number — контактний номер.
+	- username (FK → users.username) — обліковий запис донора.
+	- pi_agreed — згода на обробку персональних даних.
+	Таблиця medic_user (Інформація про медичних працівників):
+	- id (PK) — унікальний ідентифікатор.
+	- first_name, last_name, phone_number — особисті дані.
+	- hospital_id (FK → hospital.id) — заклад, до якого належить.
+	- username (FK → users.username) — обліковий запис.
+	Таблиця hospital:
+	- id (PK) — ідентифікатор.
+	- hospital_name — назва лікарні.
+	Таблиця blood_needs (Потреба лікарні в кожній групі крові):
+	- id (PK) — ідентифікатор запису.
+	- hospital_id (FK → hospital.id) — відповідна лікарня.
+	- o_negative, ..., ab_positive — кількість потрібної крові відповідної групи (REAL).
+	Таблиця donation_event:
+	- Id (PK) — унікальний ідентифікатор.
+	- date_time — дата і час проведення.
+	- event_address — адреса проведення.
+	- event_status — статус події (PLANNED, COMPLETED, тощо).
+	- notes — додаткові коментарі.
+	- created_by (FK → users.username) — хто створив подію.
+	Таблиця donation:
+	- id (PK) — ідентифікатор.
+	- donor_id (FK → donor_data.id) — учасник.
+	- event_id (FK → donation_event.id) — подія.
+	- created_by (FK → users.username) — автор запису.
+	Таблиця blood:
+	- id (PK) — ідентифікатор.
+	- blood_type, rhesus_factor — тип і резус-фактор.
+	- spoiled — чи зіпсована.
+	- barcode — унікальний штрихкод.
+	- use_status — статус використання (AVAILABLE, USED, EXPIRED).
+	created_by (FK → users.username) — автор запису.
+	- donation_id (FK → donation.id) — з якої донації отримано.
+	- fridge_id (FK → fridge.id) — де зберігається.
+	Таблиця fridge:
+	- id (PK) — ідентифікатор.
+	- serial_number — серійний номер.
+	- fridge_alias — умовна назва.
+	- notes — коментарі.
+	- temp_celsius_min, temp_celsius_max — допустимий діапазон температур.
+	- humidity_percent_min, humidity_percent_max — допустимий діапазон вологості.
+	- created_by (FK → users.username) — автор запису.
+	Таблиця fridge_metrics:
+	- id (PK) — ідентифікатор.
+	- temp_celsius — поточна температура.
+	- humidity_percent — поточна вологість.
+	- fridge_id (FK → fridge.id) — холодильник, до якого належить.
+	Таблиця Notifications:
+	- id (PK) — ідентифікатор.
+	- target_user (FK → users.username) — кому адресовано.
+	- created_at — час створення.
+	- notification_title, notification_body — зміст сповіщення.
+	- notes — додаткові коментарі.
+ 
+6 СПЕЦИФІКАЦІЯ REST
+
+	Система реалізує RESTful API для забезпечення взаємодії між клієнтськими застосунками (веб, мобільний) та серверною частиною. REST-архітектура дає змогу будувати легкий і масштабований інтерфейс для передачі даних через протокол HTTP/HTTPS, що є стандартом у сучасній розробці. Передача даних здійснюється у форматі JSON. API підтримує авторизацію та автентифікацію користувачів з розподілом доступу за ролями (донор, медик, адміністратор).
+	Для запитів використовуються стандартні HTTP-методи:
+	- GET — для отримання даних
+	- POST — для створення нових ресурсів
+	- PUT/PATCH — для оновлення ресурсів
+	- DELETE — для видалення ресурсів
+	Таблиця 1 – Приклади Rest-ендпоїнтів 
+Метод	Шлях						Опис					Доступ
+POST	/api/auth/login					Авторизація користувача			Публічно
+POST	/api/donors					Реєстрація нового донора		Медик
+GET	/api/events					Отримання списку всіх подій		Донор
+POST	/api/events/{id}/register			Запис донора на подію			Донор
+DELETE	/api/events/{id}/register			Скасування участі в події		Донор
+GET	/api/notifications				Перегляд всіх сповіщень			Донор
+POST	/api/blood-collection				Створення запису про донацію		Медик
+GET	/api/blood-storage				Перегляд запасів крові			Медик
+PUT	/api/fridges/{id}				Оновлення інформації про холодильник	Медик
+GET	/api/fridges/{id}/metrics?from=...&to=...	Перегляд метрик у діапазоні часу	Медик
+POST	/api/medical-institutions			Створення медзакладу			Адміністратор
+
+ 
+7 ПОБУДОВА ДІАГРАМИ КОМПОНЕНТІВ
+
+	Для побудови діаграми компонентів було використано підхід компонентного моделювання, який дозволяє представити архітектуру системи у вигляді окремих функціональних блоків, що взаємодіють один з одним через чітко визначені інтерфейси.
+	У межах побудови діаграми було враховано всі основні частини програмної системи. Клієнтські додатки, а саме: веб-інтерфейс та мобільний застосунок, які взаємодіють із серверною частиною через REST API. IoT-пристрій - смарт-холодильник, який передає дані про стан зберігання крові до серверу через спеціалізований сервіс моніторингу. Серверна частина реалізована за допомогою Java 21, Spring Boot і розділена на логічно незалежні сервіси, кожен з яких відповідає за окрему частину бізнес-логіки: облік донорів, керування івентами, обробка донацій, облік запасів крові, нотифікації, керування медичними установами тощо. База даних центральна система зберігання, побудована на основі PostgreSQL, до якої звертаються всі серверні сервіси для збереження й обробки даних. Діаграма відображає взаємозв’язки між компонентами, демонструючи, які клієнтські додатки чи пристрої звертаються до яких сервісів через центральний шлюз REST API, та які саме сервіси взаємодіють з базою даних. Побудована діаграма компонентів (Component Diagram) зображена на рисунку 7: 	
+Рисунок 7 - UML діаграма компонентів (Component Diagram)
+
+ВИСНОВКИ
+
+	У результаті виконання лабораторної роботи було спроєктовано програмну систему для підтримки процесів донорства крові, що охоплює взаємодію користувачів різних ролей: адміністратора, медика та донора. 	Система реалізована з урахуванням сучасних вимог до масштабованості, зручності використання та підтримки IoT-пристроїв для автоматизації обліку зберігання крові.
+	Було проаналізовано функціональні вимоги та побудовано діаграму прецедентів, що описує основні сценарії взаємодії користувачів із системою. Побудовано ER-діаграму, яка відображає логічну структуру бази даних і зв’язки між сутностями. Розроблено діаграму розгортання, яка ілюструє взаємодію клієнтських застосунків, серверної частини, IoT-пристроїв та бази даних. Побудовано діаграму компонентів, яка дозволяє чітко розмежувати функціональні частини серверної частини та відображає взаємозв’язки між сервісами. Представлено специфікацію REST API, яка описує кінцеві точки для взаємодії з системою. Описано архітектуру клієнтської та серверної частини системи, включаючи використані технології: Java, Spring Boot, PostgreSQL, Kotlin, Jetpack Compose, HTML/CSS/JS.
+	Система підтримує повний життєвий цикл роботи з донорами та кров’ю від реєстрації донації до зберігання та зміни статусу крові. Також вона дозволяє медикам контролювати події, холодильники та запаси, а донорам зручно реєструватись на події та управляти своїми даними.
+	Розроблена архітектура забезпечує модульність, розширюваність та зручну підтримку в майбутньому. 
+
+ДОДАТОК А 
+Посилання на відеозапис до лабораторної роботи: https://youtu.be/yGy3yBFsMKU
+
+ДОДАТОК Б
+SQL запити на створення таблиць бази даних
+
+-- 1
+CREATE DATABASE blooddo;
+
+-- 2
+CREATE USER blooddouser WITH ENCRYPTED PASSWORD 'blooddopass2';
+
+-- 3
+GRANT ALL PRIVILEGES ON DATABASE blooddo TO blooddouser;
+
+-- 4
+CREATE TABLE users(
+	username VARCHAR(50) NOT NULL PRIMARY KEY,
+	password VARCHAR(256) NOT NULL,
+	enabled BOOLEAN NOT NULL,
+	created_by VARCHAR(50),
+	ui_language VARCHAR(5) NOT NULL DEFAULT 'uk',
+	pi_agreed BOOLEAN NOT NULL DEFAULT FALSE,
+	CONSTRAINT fk_users_created_by FOREIGN KEY(created_by) REFERENCES users(username)
+);
+
+-- 5 
+CREATE TABLE authorities (
+	username VARCHAR(50) NOT NULL,
+	authority VARCHAR(128) NOT NULL,
+	CONSTRAINT fk_authorities_users FOREIGN KEY(username) REFERENCES users(username)
+);
+
+-- 6 
+CREATE UNIQUE INDEX ix_auth_username ON authorities (username,authority);
+
+-- 7
+INSERT INTO users (username, password, enabled)
+	VALUES ('admin',
+		'$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.AQubh4a',
+		TRUE);
+
+-- 8
+INSERT INTO authorities (username, authority)
+	VALUES ('admin', 'ROLE_ADMIN');
+
+INSERT INTO users (username, password, enabled)
+	VALUES ('donor',
+		'$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.AQubh4a',
+		TRUE);
+INSERT INTO authorities (username, authority)
+	VALUES ('donor', 'ROLE_DONOR');
+INSERT INTO users (username, password, enabled)
+	VALUES ('medic',
+		'$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.AQubh4a',
+		TRUE);
+INSERT INTO authorities (username, authority)
+	VALUES ('medic', 'ROLE_MEDIC');
+
+
+-- 9
+CREATE TABLE donor_data (
+	id SERIAL NOT NULL PRIMARY KEY,
+	first_name VARCHAR(256) NOT NULL,
+	last_name VARCHAR(256) NOT NULL,
+	blood_type VARCHAR(2) NOT NULL,
+	rhesus_factor BOOLEAN NOT NULL,
+	phone_number VARCHAR(12) NOT NULL,
+	username VARCHAR(50) NOT NULL UNIQUE,
+	CONSTRAINT fk_donor_data_username FOREIGN KEY(username) REFERENCES users(username)
+);
+
+-- 10
+CREATE TABLE donation_event (
+	id SERIAL NOT NULL PRIMARY KEY,
+	date_time TIMESTAMP NOT NULL,
+	event_address VARCHAR(512) NOT NULL,
+	event_status VARCHAR(24) NOT NULL DEFAULT 'PLANNED',
+	notes VARCHAR(512),
+	created_by VARCHAR(50),
+	CONSTRAINT fk_donation_event_created_by FOREIGN KEY(created_by) REFERENCES users(username)
+);
+
+-- 11
+CREATE TABLE donation (
+	id SERIAL NOT NULL PRIMARY KEY,
+	donor_id INT,
+	event_id INT NOT NULL,
+	created_by VARCHAR(50),
+	CONSTRAINT fk_donation_donor FOREIGN KEY(donor_id) REFERENCES donor_data(id),
+	CONSTRAINT fk_donation_event FOREIGN KEY(event_id) REFERENCES donation_event(id),
+	CONSTRAINT fk_donation_created_by FOREIGN KEY(created_by) REFERENCES users(username)
+);
+
+-- 12
+CREATE TABLE fridge (
+	id SERIAL NOT NULL PRIMARY KEY,
+	serial_number VARCHAR(32) NOT NULL,
+	fridge_address VARCHAR(512) NOT NULL,
+	notes VARCHAR(521),
+	temp_celsius_min REAL,
+	temp_celsius_max REAL,
+	humidity_percent_min REAL,
+	humidity_percent_max REAL,
+	created_by VARCHAR(50),
+	enabled BOOLEAN NOT NULL DEFAULT TRUE,
+	CONSTRAINT fk_fridge_created_by FOREIGN KEY(created_by) REFERENCES users(username)
+);
+
+-- 13
+CREATE TABLE blood (
+	id SERIAL NOT NULL PRIMARY KEY,
+	blood_type VARCHAR(2) NOT NULL,
+	rhesus_factor BOOLEAN NOT NULL,
+	spoiled BOOLEAN NOT NULL DEFAULT FALSE,
+	barcode VARCHAR(12) NOT NULL,
+	use_status VARCHAR(24) NOT NULL DEFAULT 'AVAILABLE',
+	created_by VARCHAR(50),
+	donation_id INT NOT NULL,
+	fridge_id INT NOT NULL,
+	CONSTRAINT fk_blood_created_by FOREIGN KEY(created_by) REFERENCES users(username),
+	CONSTRAINT fk_blood_donation FOREIGN KEY(donation_id) REFERENCES donation(id),
+	CONSTRAINT fk_blood_fridge FOREIGN KEY(fridge_id) REFERENCES fridge(id)
+);
+
+-- 14
+CREATE TABLE fridge_metrics (
+	id SERIAL NOT NULL PRIMARY KEY,
+	temp_celsius REAL NOT NULL,
+	humidity_percent REAL NOT NULL,
+	fridge_id INT NOT NULL,
+	date_time TIMESTAMP NOT NULL,
+	CONSTRAINT fk_fridge_metrics_fridge FOREIGN KEY(fridge_id) REFERENCES fridge(id)
+);
+
+-- 15
+CREATE TABLE hospital (
+	id SERIAL NOT NULL PRIMARY KEY,
+	name VARCHAR(256) NOT NULL,
+	hospital_address VARCHAR(512) NOT NULL
+);
+
+-- 16
+CREATE TABLE medic_user (
+	id SERIAL NOT NULL PRIMARY KEY,
+	first_name VARCHAR(256) NOT NULL,
+	last_name VARCHAR(256) NOT NULL,
+	phone_number VARCHAR(12) NOT NULL,
+	hospital_id INT NOT NULL,
+	username VARCHAR(50) NOT NULL UNIQUE,
+	CONSTRAINT fk_medic_user_hospital FOREIGN KEY(hospital_id) REFERENCES hospital(id),
+	CONSTRAINT fk_medic_user_username FOREIGN KEY(username) REFERENCES users(username)
+);
+
+-- 17
+CREATE TABLE blood_needs (
+	id SERIAL NOT NULL PRIMARY KEY,
+	hospital_id INT NOT NULL UNIQUE,
+	o_negative REAL NOT NULL DEFAULT 0.0,
+	o_positive REAL NOT NULL DEFAULT 0.0,
+	a_negative REAL NOT NULL DEFAULT 0.0,
+	a_positive REAL NOT NULL DEFAULT 0.0,
+	b_negative REAL NOT NULL DEFAULT 0.0,
+	b_positive REAL NOT NULL DEFAULT 0.0,
+	ab_negative REAL NOT NULL DEFAULT 0.0,
+	ab_positive REAL NOT NULL DEFAULT 0.0,
+	CONSTRAINT fk_blood_needs_hospital FOREIGN KEY(hospital_id) REFERENCES hospital(id)
+);
+
+-- 18
+CREATE TABLE notifications (
+	id SERIAL NOT NULL PRIMARY KEY,
+	target_user VARCHAR(50) NOT NULL,
+	created_by VARCHAR(50),
+	notification_header VARCHAR(128) NOT NULL,
+	notification_body VARCHAR(512),
+	delivered BOOLEAN NOT NULL DEFAULT FALSE,
+	CONSTRAINT fk_notifications_target_user FOREIGN KEY(target_user) REFERENCES users(username),
+	CONSTRAINT fk_notifications_created_by FOREIGN KEY(target_user) REFERENCES users(username)
+);
+
+-- 19
+CREATE TABLE donation_appointments (
+	id SERIAL NOT NULL PRIMARY KEY,
+	donor_id INT NOT NULL,
+	donation_event_id INT NOT NULL,
+	CONSTRAINT fk_donation_appointments_donor FOREIGN KEY(donor_id) REFERENCES donor_data(id),
+	CONSTRAINT fk_donation_appointments_donation_event FOREIGN KEY(donation_event_id) REFERENCES donation_event(id)
+);
+
