@@ -1,0 +1,323 @@
+Міністерство освіти і науки України
+Харківський національний університет радіоелектроніки
+Кафедра програмної інженерії
+
+
+
+
+
+Лабораторна робота №3
+з дисципліни: «Архітектура програмного забезпечення»
+на тему: «Розробка програмної архітектури, створення та відлагодження программного коду пристрою інтернету речей (IoT) програмної системи»
+
+
+
+
+
+
+Виконала:                                                                                                     
+ст. гр. ПЗПІ-22-2                                                                                              
+Моссур Дар'я Євгенівна                                                      
+
+Перевірив:
+ст. викладач кафедри ПІ
+Сокорчук Ігор Петрович
+
+
+
+
+Харків 2025
+ 
+1 ІСТОРІЯ ЗМІН
+
+№	Дата	Версія звіту	Опис змін
+1	31.05.2025	0.1	Створення структури звіту, визначено завдання та терміни виконання
+2	05.06.2025	0.1	Описано мету, хід роботи, зроблено висновки, заповнено додатки до роботи.
+
+2 АНАЛІЗ ЗАВДАННЯ
+
+	Метою лабораторної роботи є розробка програмної архітектури та створення та відлагодження програмного коду пристрою інтернету речей (IoT) програмної системи
+
+3 ХІД РОБОТИ
+	Під час виконання даної лабораторної роботи було описано концепцію за якою побудована IoT частина програмної системи, її програмну архітектуру, математичні методи обробки користувацьких даних для реалізації
+бізнес логіки, описано специфікацію вибраного методу взаємодії IoT частини програмної системи з іншими компонентами програмної системи. Описано використані програмні технології та компоненти, способи інтерналізації, описано програмну реалізацію та функціональність для налаштування IoT частини програмної системи, зроблено висновки. Було також побудовано UML діаграму прецедентів (Use Case Diagram), UML діаграму взаємодії (Interaction Overview Diagram), UML діаграму діяльності (Activity Diagram) та UML діаграму компонентів (Component Diagram) та описано у відповідних пунктах до роботи. Код до програмної реалізації частини системи IoT пристрою наведено у Додатку А та завантажено на GitHub. 	
+
+3.1. Концепція IoT частини програмної системи
+	IoT частина системи реалізує збір, передачу та обробку метрик з "розумних холодильників", у яких зберігається донорська кров. Кожен холодильник оснащений сенсорами, такими як: сенсори температури, вологості, дверей тощо, які періодично надсилають дані на бекенд-сервер. Основною метою є контроль умов зберігання крові та автоматичне виявлення потенційного псування. IoT пристрій надсилає метрики температури та вологості, повідомляє про критичні зміни, отримує підтвердження від сервера. Медичний працівник, в свою чергу, переглядає, або оновлює статус крові на основі даних з IoT.
+	Для більш детального розуміння взаємодії IoT пристрою - побудуємо UML діаграму прецедентів (Use Case Diagram). Побудована Use Case Diagram наведена на рисунку 3.1 нижче.
+Рисунок 3.1 - UML діаграма прецедентів (Use Case Diagram)
+
+	3.2. Програмна архітектура IoT частини програмної системи
+	IoT частина відповідає за інтеграцію із зовнішнім джерелом сенсорних даних — розумними холодильниками, що передають метрики (температура, вологість, стан дверей тощо) через API стороннього постачальника — Smart Solutions. Для цього використовується Feign-клієнт, який інкапсулює логіку HTTP-запитів до зовнішньої системи. 
+	 Feign IoT-клієнт (SmartSolutionsClient) реалізований за допомогою бібліотеки Spring Cloud OpenFeign. Відповідає за ініціацію запитів до Smart Solutions API. Він встановлює безпечне з’єднання (Bearer Token), серіалізує та десеріалізує JSON-повідомлення, а також абстрагує HTTP-взаємодію у вигляді методу queryCall:
+@FeignClient(value = "smartsolutions", url = "${blooddo.smart-solutions.url}")
+@Headers({
+        "Authentication: Bearer ${blooddo.smart-solutions.secret}",
+        "Accept: application/json",
+        "Content-Type: application/json"
+})
+public interface SmartSolutionsClient {
+
+    @PostMapping("/query")
+    SmartSolutionsResponseDto queryCall(@RequestBody SmartSolutionsRequestDto requestDto);
+}
+
+Взаємодія здійснюється за допомогою двох DTO:
+public class SmartSolutionsRequestDto {
+    private String fridgeId;
+    private String sensorType;
+    private String timeRange;
+}
+
+public class SmartSolutionsResponseDto {
+    private String status;
+    private List<SensorMetricDto> metrics;
+}
+
+Сервісний рівень (FridgeMetricsService) - сервіс, який викликає Feign-клієнт, обробляє отримані метрики та виконує бізнес-логіку: перевірку температурних відхилень, зберігання метрик, визначення псування крові тощо:
+@Service
+public class FridgeMetricsService {
+
+    private final SmartSolutionsClient smartSolutionsClient;
+    private final FridgeMetricsRepository repository;
+
+    public FridgeMetricsService(SmartSolutionsClient client, FridgeMetricsRepository repository) {
+        this.smartSolutionsClient = client;
+        this.repository = repository;
+    }
+
+    public void fetchAndProcessMetrics(String fridgeId) {
+        SmartSolutionsRequestDto request = new SmartSolutionsRequestDto(fridgeId, "temperature", "last5min");
+        SmartSolutionsResponseDto response = smartSolutionsClient.queryCall(request);
+
+        for (SensorMetricDto metric : response.getMetrics()) {
+            if (metric.getValue() < 2 || metric.getValue() > 6) {
+                // Логіка фіксації критичних відхилень
+                System.out.println("⚠️ Температурне відхилення для холодильника " + fridgeId);
+            }
+            repository.save(new FridgeMetricsEntity(fridgeId, metric.getValue(), metric.getTimestamp()));
+        }
+    }
+}
+
+Процес взаємодії відбувається таким чином, що scheduler або запит медика ініціює отримання метрик. FridgeMetricsService викликає SmartSolutionsClient.queryCall(), IoT клієнт надсилає запит до API Smart Solutions. Отримані метрики обробляються, перевіряється стан, фіксуються відхилення. Метрики зберігаються у БД через FridgeMetricsRepository.
+Для візуального уявлення про архітектурну композицію IoT частини, структуру модулів та їхню взаємодії контролерів, сервісів, репозиторіїв, зовнішніх API побудуємо UML діаграму компонентів (Component Diagram). Створена діаграма зображена на рисунку 3.2 нижче.
+Рисунок 3.2 - UML діаграма компонентів (Component Diagram)
+
+3.3. Математичні методи обробки користувацьких даних
+В IoT частині системи використовуються математичні методи, що дозволяють визначити, чи умови зберігання крові виходять за допустимі межі, прийняти рішення щодо псування крові. Основна формула логіки:
+if (temperature < minTemp || temperature > maxTemp
+ || humidity < minHumidity || humidity > maxHumidity)
+    -> позначити всі зразки крові як зіпсовані
+Цей механізм реалізовано в методі recordMetric() класу FridgeMetricsService. Тут відбувається порівняння metric.getTempCelsius() і metric.getHumidityPercent() з межами з Fridge, автоматичне встановлення blood.setSpoiled(true) для всієї крові в холодильнику. Повний програмний код наведено у Додатку А.	
+Побудуємо діаграму діяльності для того, щоб проілюструвати послідовність дій, умовних переходів та результатів, що саме є математичною частиною обробки даних у системі. Вона наочно демонструє логіку фільтрації, перевірки та реагування на відхилення значень температури чи вологості. Створена UML діаграма діяльності (Activity Diagram) зображена на рисунку 3.3. 
+Рисунок 3.3 - UML діаграма діяльності (Activity Diagram)
+3.4. Специфікація взаємодії IoT з іншими компонентами
+Зробимо детальний опис компонентів взаємодії:
+- Feign-клієнт SmartSolutionsClient:
+	- Відправляє POST-запит до API Smart Solutions.
+	- Авторизація через Bearer Token.
+	- Маршрут: POST /query
+	- Тіло SmartSolutionsRequestDto, яке містить список пристроїв.
+- Клас SmartFridgesRetrieveInfoScheduler:
+ Це планувальник, що кожні 30 хв викликає client.queryCall(), отримує SmartSolutionsResponseDto. Та передає дані у FridgeMetricsService.recordMetric().
+- Контролер FridgeMetricsController:
+ Обробляє зовнішній POST /fridge/metrics (може використовуватись іншими IoT-пристроями). Приймає FridgeMetricDto → викликає сервіс.
+Повний код наведено у Додатку А. 
+Для того, щоб краще зрозуміти послідовність комунікацій між модулями системи, побудуємо діаграму взаємодії (Interaction Overview Diagram). Дана діаграма візуалізує процес комунікації (планувальник → API-клієнт → сервіс), демонструє логіку обробки подій у часі. Побудована діаграма зображена на рисунку 3.4 нижче. 
+Рисунок 3.4 - UML діаграма взаємодії (Interaction Overview Diagram)	
+
+3.5. Програмні технології та компоненти
+IoT частина програмної системи реалізована з використанням сучасного Java-стека, орієнтованого на розширюваність, безпеку, модульність та простоту інтеграції із зовнішніми джерелами даних. Завдяки обраному технологічному підходу, система забезпечує стабільний прийом та обробку сенсорних метрик холодильників, з яких зчитуються параметри температури та вологості для забезпечення належних умов зберігання донорської крові. 
+IoT-сервіси реалізовані як частина мікросервісного застосунку, в основі якого лежить Spring Boot. Цей фреймворк автоматизує процес конфігурації та дозволяє швидко запускати веб-застосунки. Spring MVC використовується для побудови REST API — зокрема, контролера FridgeMetricsController, який приймає зовнішні запити з метриками від пристроїв. Для збереження метрик, отриманих від IoT-пристроїв, система використовує Spring Data JPA у зв'язці з Hibernate. Модель FridgeMetric є відповідником таблиці в реляційній базі даних, і через FridgeMetricsRepository реалізується зберігання усіх записів з температурою, вологістю та часовою міткою. Це дозволяє в будь-який момент відновити історію показників конкретного холодильника та здійснити подальший аналіз. Завдяки ORM ми працюємо з об’єктами Java, а не з SQL-запитами безпосередньо, що робить систему більш безпечною та стабільною.
+У системі реалізований фоновий механізм періодичного опитування пристроїв. Планувальник SmartFridgesRetrieveInfoScheduler кожні 30 хвилин автоматично викликає API сторонньої системи (через SmartSolutionsClient), отримує свіжі метрики, зберігає їх, а також перевіряє, чи не перевищено граничні значення. У разі відхилень автоматично створюються відповідні сповіщення. Цей механізм базується на анотації @Scheduled, яка є частиною Spring Task.
+У якості СУБД використовується PostgreSQL — потужна, відкрита реляційна база даних, яка чудово підходить для зберігання великої кількості структурованих даних, зокрема метрик холодильників, інформації про кров, нотифікацій тощо. PostgreSQL також підтримує часові типи даних, що важливо при збереженні метрик, отриманих у реальному часі.
+Передача даних між клієнтом, контролером, сервісами та зовнішніми API реалізується через DTO (Data Transfer Objects), які оформлені у вигляді record-класів Java. Такий підхід дозволяє гарантувати імутабельність, покращити читабельність коду, зменшити кількість шаблонного коду (немає потреби в getters/setters). Ці DTO використовуються для опису структури запитів (SmartSolutionsRequestDto) та відповідей (SmartSolutionsResponseDto) у Feign-клієнті.
+У підсумку, обрана технологічна архітектура дозволяє ефективно реалізовувати всі IoT-процеси системи: від збору даних з пристроїв — до прийняття рішень щодо якості зберігання крові. Усі технології сучасні, підтримувані та придатні для масштабування. 
+
+3.6. Інтерналізація у IoT частині програмної системи
+IoT частина системи не взаємодіє безпосередньо з користувачем у вигляді інтерфейсу GUI, проте бере участь у формуванні внутрішніх повідомлень. Зокрема, мова йде про систему нотифікацій для медичних працівників, які повідомляються у випадках виявлення порушення умов зберігання донорської крові в холодильниках, підключених до системи. У рамках обробки IoT-метрик виявляється, якщо значення температури або вологості вийшли за межі, визначені для конкретного холодильника. У такому випадку сервіс FridgeMetricsService позначає усі зразки крові в цьому холодильнику як зіпсовані (blood.setSpoiled(true)), ініціює створення повідомлення для медичних працівників, пов’язаних з лікарнею, де знаходиться холодильник.
+Приклад створення нотифікації:
+notification.setNotificationHeader("notification_medic_spoiled_bloo	d_header|||%s".formatted(fridge.getSerialNumber()));
+notification.setNotificationBody("notification_medic_spoiled_blood_	body"); 
+Ключі, які передаються у повідомленнях, не конвертуються у текст безпосередньо у коді IoT частини. Їхній зміст підставляється в момент візуалізації на фронтенді або в іншому клієнтському шарі, де вже враховується вибрана мова користувача. Такий підхід до інтерналізації в IoT частині дозволяє відокремити логіку та інтерфейс — повідомлення створюються на логічному рівні, але відображаються з урахуванням мови користувача, спростити підтримку багатомовності, адже у разі зміни повідомлень не потрібно змінювати код IoT-сервісу, уніфікувати повідомлення у всій системі — всі модулі (включно з IoT) дотримуються єдиної системи ключів локалізації.
+
+3.7. Програмна реалізація IoT частини
+Програмна реалізація IoT частини системи базується на чітко визначеній структурі. Архітектура побудована навколо обміну даними з розумними холодильниками, збереженням отриманих метрик та контролем умов зберігання донорської крові. Цей механізм реалізований як фоновий процес, який автоматично ініціюється планувальником і взаємодіє з зовнішнім API за допомогою декларативного HTTP-клієнта.
+Першим компонентом, який відіграє ключову роль у взаємодії з IoT-пристроями, є клас SmartSolutionsClient. Це інтерфейс, анотований @FeignClient, який реалізує HTTP-запити до API сторонньої системи Smart Solutions. Кожен запит формально є POST-запитом, що передає ідентифікатор холодильника і отримує у відповідь об’єкт, що містить поточні сенсорні показники: температуру, вологість, статус онлайну тощо. 
+Далі в ланцюгу обробки клас SmartFridgesRetrieveInfoScheduler, який реалізує періодичне опитування активних холодильників. Цей клас анотований @Scheduled і працює кожні 30 хвилин. Він ітерується по всіх увімкнених холодильниках у базі даних, формує запити через SmartSolutionsClient, отримує свіжі метрики та передає їх у FridgeMetricsService.
+FridgeMetricsService є центральним компонентом бізнес-логіки IoT підсистеми. Саме тут реалізовано збереження нових метрик у базу даних, а також виконання перевірок на відповідність встановленим межам температури та вологості, які задаються індивідуально для кожного холодильника. Якщо метрики виходять за допустимі межі, відбувається не лише збереження цієї інформації, а й вживаються конкретні дії: усі зразки крові, що зберігалися в даному холодильнику, позначаються як зіпсовані (spoiled = true). Окрім того, для всіх медичних працівників, прив’язаних до медичного закладу, де знаходиться даний холодильник, створюється нотифікація із зазначенням серійного номера холодильника та повідомленням про виявлення потенційного псування крові.
+Зберігання метрик здійснюється через репозиторій FridgeMetricsRepository, що базується на Spring Data JPA. Відповідна сутність — FridgeMetric, яка містить температуру, вологість, дату/час, а також зв’язок із сутністю Fridge. Клас Fridge у свою чергу зберігає мінімальні та максимальні допустимі значення температури та вологості. Саме ці значення використовуються у перевірці критичних відхилень.
+Програмний код наведений у Додатку А.
+
+3.8. Функціональність для налаштування IoT частини
+У системі реалізована обмежена, але ефективна функціональність для налаштування параметрів роботи IoT підсистеми. Основна ідея полягає в тому, що кожен холодильник у базі даних має індивідуальні налаштування меж температури та вологості, які визначають допустимі умови зберігання крові. Ці значення зберігаються у відповідних полях сутності Fridge, наприклад: tempCelsiusMin, tempCelsiusMax, humidityPercentMin, humidityPercentMax. Таким чином, система дозволяє персоналізувати налаштування з урахуванням характеристик конкретного холодильника або вимог конкретного типу крові.
+Змінювати ці значення може медичний працівник через інтерфейс адміністратора або API (детальніше — у відповідному модулі), що дозволяє гнучко адаптувати систему до різних умов експлуатації. Наприклад, якщо встановлено новий холодильник з іншим температурним режимом, медик може задати нові граничні значення, і система надалі використовуватиме їх для аналізу метрик, що надходять.
+Ще один рівень налаштування пов’язаний із інтеграцією зовнішньої системи Smart Solutions. У конфігураційному файлі application.yml передбачено блок, який містить URL для запитів і токен авторизації. Ці налаштування можуть бути змінені без перекомпіляції за стосунку, для цього достатньо змінити відповідні поля у файлі або перемінні середовища, якщо застосунок деплоїться у хмарне середовище.
+Окрім того, періодичність опитування пристроїв задається у вигляді CRON-виразу в анотації @Scheduled, що також може бути винесено в окрему конфігурацію, якщо потрібно змінити інтервал виконання без зміни коду.
+Таким чином, налаштування IoT частини включає як технічні параметри (URL, токен, CRON-вираз), так і користувацькі (діапазони температур, вологості для кожного холодильника). Це забезпечує високий рівень адаптивності системи до змін зовнішніх умов та індивідуальних особливостей експлуатації. 
+
+ВИСНОВКИ
+	У результаті виконання лабораторної роботи було було реалізовано IoT частину програмної системи. Для якісного збереження донорської крові було спроєктовано, розроблено та протестовано підсистему автоматичного моніторингу умов її зберігання, що базується на використанні сенсорів, підключених до розумних холодильників.
+	Було забезпечено постійний контроль за температурним режимом та режимом вологості, а також автоматичне виявлення порушень, які можуть призвести до псування донорської крові. Комунікація з IoT-пристроями здійснюється через зовнішнє API постачальника Smart Solutions, що дозволяє централізовано отримувати необхідні сенсорні метрики.
+	Програмна архітектура побудована на засадах модульності та масштабованості. Усі отримані показники зберігаються у базі даних, а в разі виявлення відхилень система автоматично позначає відповідні зразки крові як зіпсовані, повідомляючи медичних працівників про необхідність перевірки. 	Підсистема відповідає поставленим функціональним вимогам, є розширюваною і легко інтегрується з іншими компонентами програмної системи. Вона забезпечує надійний, автоматизований контроль якості зберігання крові, що підвищує безпеку та ефективність роботи медичних закладів.
+
+ДОДАТОК А
+Код програмної реалізації IoT-частини
+
+	FridgeMetricService.java:
+package ua.nure.mossurd.blooddosyst.service;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import ua.nure.mossurd.blooddosyst.dto.FridgeMetricDto;
+import ua.nure.mossurd.blooddosyst.entity.Blood;
+import ua.nure.mossurd.blooddosyst.entity.Fridge;
+import ua.nure.mossurd.blooddosyst.entity.FridgeMetric;
+import ua.nure.mossurd.blooddosyst.entity.Notification;
+import ua.nure.mossurd.blooddosyst.repository.*;
+import java.time.LocalDateTime;
+import java.util.List;
+@Service
+@RequiredArgsConstructor
+public class FridgeMetricsService {
+    private final FridgeRepository fridgeRepository;
+    private final FridgeMetricsRepository fridgeMetricsRepository;
+    private final BloodRepository bloodRepository;
+    private final MedicUserRepository medicUserRepository;
+    private final NotificationRepository notificationRepository;
+    public void createMetric(FridgeMetricDto metricDto) {        recordMetric(fridgeRepository.getReferenceById(metricDto.fridgeId()),
+                metricDto.tempCelsius(),
+                metricDto.humidityPercent(),
+                metricDto.dateTime());
+    }
+    public void recordMetric(Fridge fridge, Float temperatureCelsius, Float humidityPercent, LocalDateTime dateTime) {
+        FridgeMetric metric = new FridgeMetric();
+        metric.setFridge(fridge);
+        metric.setDateTime(dateTime);
+        metric.setTempCelsius(temperatureCelsius);
+        metric.setHumidityPercent(humidityPercent);
+        fridgeMetricsRepository.saveAndFlush(metric);
+        if (metric.getTempCelsius().compareTo(fridge.getTempCelsiusMin()) < 0                || metric.getTempCelsius().compareTo(fridge.getTempCelsiusMax()) > 0
+                || metric.getHumidityPercent().compareTo(fridge.getHumidityPercentMin()) < 0
+                || metric.getHumidityPercent().compareTo(fridge.getHumidityPercentMax()) > 0) {
+            List<Blood> bloodList = bloodRepository.findAllByFridge(fridge);
+            bloodList.forEach(blood -> blood.setSpoiled(true));
+            bloodRepository.saveAllAndFlush(bloodList);          medicUserRepository.getAllByHospital_hospitalAddress(fridge.getFridgeAddress())
+                    .forEach(medic -> {
+                        Notification notification = new Notification();                        notification.setNotificationHeader(String.format("notification_medic_spoiled_blood_header|||%s", fridge.getSerialNumber()));
+                        notification.setNotificationBody("notification_medic_spoiled_blood_body");
+                        notification.setTargetUser(medic.getUser());                        notificationRepository.saveAndFlush(notification);
+                    });
+        }
+    }
+}
+
+	SmartSolutionsClient.java
+
+package ua.nure.mossurd.blooddosyst.client;
+
+import feign.Headers;
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import ua.nure.mossurd.blooddosyst.dto.SmartSolutionsRequestDto;
+import ua.nure.mossurd.blooddosyst.dto.SmartSolutionsResponseDto;
+
+@FeignClient(value = "smartsolutions", url = "${blooddo.smart-solutions.url}")
+@Headers({
+        "Authentication: Bearer ${blooddo.smart-solutions.secret}",
+        "Accept: application/json",
+        "Content-Type: application/json"
+})
+public interface SmartSolutionsClient {
+
+    @PostMapping("/query")
+    SmartSolutionsResponseDto queryCall(@RequestBody SmartSolutionsRequestDto requestDto);
+}
+
+	FridgeMetricsController
+
+package ua.nure.mossurd.blooddosyst.controller;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+import ua.nure.mossurd.blooddosyst.dto.FridgeMetricDto;
+import ua.nure.mossurd.blooddosyst.service.FridgeMetricsService;
+
+@RestController
+@RequestMapping(value = "/fridge/metrics")
+@CrossOrigin(origins = "*")
+@RequiredArgsConstructor
+public class FridgeMetricsController {
+
+    private final FridgeMetricsService fridgeMetricsService;
+
+    @PostMapping
+    public void createMetric(@RequestBody FridgeMetricDto metricDto) {
+        fridgeMetricsService.createMetric(metricDto);
+    }
+}
+
+	
+	SmartFridgesRetrieveInfoScheduler.java
+
+package ua.nure.mossurd.blooddosyst.scheduler;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+import ua.nure.mossurd.blooddosyst.client.SmartSolutionsClient;
+import ua.nure.mossurd.blooddosyst.dto.*;
+import ua.nure.mossurd.blooddosyst.entity.Fridge;
+import ua.nure.mossurd.blooddosyst.entity.FridgeMetric;
+import ua.nure.mossurd.blooddosyst.repository.FridgeMetricsRepository;
+import ua.nure.mossurd.blooddosyst.repository.FridgeRepository;
+import ua.nure.mossurd.blooddosyst.service.FridgeMetricsService;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
+@Component
+@RequiredArgsConstructor
+public class SmartFridgesRetrieveInfoScheduler {
+
+    private final FridgeRepository fridgeRepository;
+    private final FridgeMetricsService fridgeMetricsService;
+    private final SmartSolutionsClient client;
+
+    @Scheduled(cron = "* */30 * * * *")
+    public void retrieveFridgeMetrics() {
+        List<Fridge> fridges = fridgeRepository.findAllByEnabledTrue();
+        fridges.forEach(fridge -> {
+            SmartSolutionsRequestDto requestBody = new SmartSolutionsRequestDto(UUID.randomUUID().toString(),
+                    List.of(new SmartSolutionsInputDto("action.devices.QUERY",
+                            new SmartSolutionsRequestPayloadDto(List.of(new SmartSolutionsRequestDeviceDto(fridge.getSerialNumber()))))));
+
+            SmartSolutionsResponseDto responseBody = client.queryCall(requestBody);
+            fridgeMetricsService.recordMetric(fridge,
+                    responseBody.payload().devices().get(fridge.getSerialNumber()).temperatureSetpointCelsius(),
+                    responseBody.payload().devices().get(fridge.getSerialNumber()).humiditySetpointPercent(),
+                    LocalDateTime.now());
+        });
+    }
+}
+
+	SmartSolutionsRequestDto.java
+
+package ua.nure.mossurd.blooddosyst.dto;
+import java.util.List;
+public record SmartSolutionsRequestDto(
+        String requestId,
+        List<SmartSolutionsInputDto> inputs
+) {}
+
+	SmartSolutionsResponseDto.java
+
+package ua.nure.mossurd.blooddosyst.dto;
+public record SmartSolutionsResponseDto(
+        String requestId,
+        SmartSolutionsResponsePayloadDto payload
+) {}
+
+
