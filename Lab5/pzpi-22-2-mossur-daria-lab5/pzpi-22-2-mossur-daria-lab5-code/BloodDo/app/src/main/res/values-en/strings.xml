@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">BloodDo</string>
+    <string name="title_activity_main_menu">MainMenuActivity</string>
+    <string name="title_activity_donation_appointment">DonationAppointmentActivity</string>
+    <string name="coming_soon">Coming soon...</string>
+    <string name="notification_donor_donation_tomorrow_header">You have blood donation tomorrow</string>
+    <string name="notification_donor_donation_tomorrow_body">Please do not forget to prepare yourself. Check recommendations for more details.\nAddress: %s\nTime: %s</string>
+    <string name="notification_medic_spoiled_blood_header">Blood in fridge %s was spoiled</string>
+    <string name="notification_medic_spoiled_blood_body">Out of range metrics was registered in the fridge. Blood in this fridge was spoiled.</string>
+    <string name="notification_empty_header">Empty header</string>
+    <string name="notification_empty_body">Empty body</string>
+    <string name="error_only_donors_be_deleted">Currently only donors can be deleted from the system</string>
+    <string name="login_activity_welcome">Welcome to BloodDo\n\n</string>
+    <string name="login_activity_username">Username</string>
+    <string name="login_activity_password">Password</string>
+    <string name="login_activity_login_button">Login</string>
+    <string name="login_activity_generic_error">An error occurred during attempt to connect to server</string>
+    <string name="login_activity_invalid_credentials">Invalid username or password</string>
+    <string name="lang_short_name">EN</string>
+    <string name="request_generic_error">An error occurred. Try again later.</string>
+    <string name="main_menu_profile_button_label">Profile</string>
+    <string name="title_activity_profile">ProfileActivity</string>
+    <string name="profile_activity_donor_data_template">Hello, %s %s!\n%s(%s)\n%s</string>
+    <string name="profile_activity_medic_data_template">Hello, %s %s!\n%s\n%s\n%s</string>
+    <string name="profile_activity_hospital_name_copied">Hospital name copied to clipboard</string>
+    <string name="profile_activity_hospital_address_copied">Hospital address copied to clipboard</string>
+    <string name="pi_notice_header">Privacy Notice</string>
+    <string name="pi_notice_body"><![CDATA[Effective Date: 11/12/2024\n
+\n
+At BloodDo, we are committed to protecting your personal information. This privacy notice explains how we collect, use, and protect the data you provide to us, in compliance with the General Data Protection Regulation (GDPR).\n
+\n
+1. Data We Collect\n
+We collect the following personal data from you:\n
+\n
+    * First and last name\n
+    * Phone number\n
+\n
+For specific user types, we may collect additional information:\n
+\n
+    * Blood type and rhesus factor (for donors)\n
+    * Work address (for medical workers)\n
+\n
+2. Purpose of Data Collection\n
+Your personal data will only be used for internal purposes within our system to perform the necessary functions related to your use of the system. No personal data will be used for marketing, service improvements, or shared with third parties.\n
+\n
+3. Data Retention\n
+Your personal data will be stored only as long as necessary for the purpose of the system functions.\n
+\n
+4. Data Security\n
+We are committed to maintaining the security of your data and use reasonable measures to prevent unauthorized access or disclosure.\n
+\n
+5. Your Rights\n
+Under the GDPR, you have the right to:\n
+\n
+    * Access the personal data we hold about you\n
+    * Request the correction or deletion of your personal data\n
+    * Object to or restrict the processing of your personal data\n
+    * Request data portability\n
+\n
+If you would like to exercise any of these rights, please contact us at info@example.com\n
+\n
+6. Contact Us\n
+If you have any questions or concerns about this privacy notice or our data practices, please contact us at info@example.com\n
+\n
+By using our system, you agree to the collection and use of your personal data as outlined in this privacy notice.]]>
+    </string><string name="pi_notice_agree">Agree</string>
+    <string name="pi_notice_delete">Disagree,\nremove me from system</string>
+    <string name="back_generic_label">Back</string>
+    <string name="title_activity_pi_agreement">PiAgreementActivity</string>
+    <string name="main_menu_donation_appointment_button">Blood donation appointment</string>
+    <string name="main_menu_donation_my_appointments_button">My appointments</string>
+    <string name="main_menu_donation_recommendations_button">Preparation for blood donation</string>
+    <string name="main_menu_donation_history_button">Donation history</string>
+    <string name="main_menu_pi_notice_settings_button">Privacy Notice settings</string>
+    <string name="donation_recommendations_header">What you should know about donation</string>
+    <string name="donation_recommendations_body"><![CDATA[Any person (Ukrainian or foreigner) between the ages of 18 and 60 with a minimum weight of 50-60 kg and no contraindications to donation can be a blood donor.\n
+\n
+Before the blood donation procedure, each donor undergoes a mandatory free examination and only after that is he allowed to donate.\n
+\n
+Examination of blood donors and blood components is carried out in order to guarantee the safety of the health of donors and recipients (a person to whom donor blood is transfused).\n
+\n
+The doctor, determining the indications for donation, its volume and type, relies on the Criteria for excluding donors of whole blood and blood components according to absolute and temporary contraindications.\n
+\n
+Absolute contraindications are cardiovascular diseases, oncological diseases, pathological tendency to bleeding, diabetes, infectious diseases in the anamnesis (hepatitis B and C, HIV).\n
+\n
+Temporary contraindications have different terms depending on the reason.\n
+\n
+After an infectious disease, potential donors are suspended for at least two weeks after the date of complete clinical recovery.\n
+\n
+* flu-like diseases - 2 weeks after symptoms disappear;\n
+* fever - 2 weeks from the date of disappearance of symptoms;\n
+* tuberculosis - 2 years after the date of confirmed recovery;\n
+* osteomyelitis - 2 years after the date of confirmed recovery;\n
+* syphilis - 1 year after the date of confirmed recovery;\n
+* toxoplasmosis - 6 months after the date of clinical recovery.\n
+\n
+Such a long list of contraindications is primarily concern for donors! The principle "save life safely" works. In the case of a high temperature or a chronic disease, the human body needs rest and treatment, not the burden that is blood donation.\n
+\n
+When preparing for donation, do not drink alcohol 48 hours before donating blood, refuse fatty, fried, smoked, dairy food, consume less salt the day before. Get some sleep and be sure to eat a light breakfast. Do not smoke an hour before blood donation. Do not donate blood if you feel chills, dizziness, headache or weakness. Answer the doctor\'s questions frankly and do not hide information during the medical examination.\n
+\n
+The standard dose of blood taken for donation is 450 ml and an additional 25 ml for tests. If you have a minimum weight (50 kg), then doctors recommend giving 350 ml (+25 for tests). In general, 7-13\% of the total blood volume is lost, but the cell count does not drop to dangerous levels, so it is safe!\n
+\n
+Why is regular donation important? Donating blood components requires a repeat donation to test your blood 6 months after the first donation and make sure your plasma can be used safely, the so-called donor blood quarantine procedure. Prior to this, the plasma is frozen for 6 months and not used until your next blood donation. Thus, it is regular donation that allows uninterrupted use of reserved blood reserves.\n
+\n
+The interval between whole blood donations is 60 days for both men and women, and between plasma or platelet donations is 14 days for either gender.\n
+\n
+After five regular donations, it is recommended to take a break of at least 3 months. If you donated whole blood, then you can donate plasma or platelets after 30 days.\n
+\n
+After donating blood, the donor should rest for 10-15 minutes. Notify staff if you feel dizzy or weak. In this condition, it is not recommended to get behind the wheel or leave the blood donation center. During the first 12 hours after donation, avoid intense physical activity. It is not recommended to lift heavy objects with the hand from which blood was taken. For the next two days, you need to eat well and regularly and drink a larger than usual amount of water (at least 2 liters). It is better to refrain from alcohol at this time.\n
+\n
+Donor blood is a valuable resource for both routine treatment and emergency care. Donation is an urgent issue even now, when there is a war in Ukraine and hundreds of thousands of wounded soldiers and civilians need help and preservation of life and health thanks to blood transfusions. And this can be done only if there is a sufficient amount of donor resources - free, voluntary donors and an inexhaustible supply of donor blood and its components.]]></string>
+    <string name="generic_ok_button">OK</string>
+    <string name="title_activity_donation_recommendations">DonationRecommendationsActivity</string>
+    <string name="donation_appointment_header">Upcoming events</string>
+    <string name="generic_notes_label">Notes:\ </string>
+    <string name="donation_appointment_confirm_appointment">Confirm appointment</string>
+    <string name="donation_appointment_confirm_appointment_done">Appointment created!</string>
+    <string name="title_activity_my_donation_appointments">MyDonationAppointmentsActivity</string>
+    <string name="my_appointments_header">My appointments</string>
+    <string name="my_appointments_details_header">Details</string>
+    <string name="my_appointments_details_remove_appointment">Remove appointment</string>
+    <string name="my_appointments_details_removed">Blood donation appointment was removed</string>
+    <string name="title_activity_my_donations">MyDonationsActivity</string>
+    <string name="my_donations_header">Donation history</string>
+    <string name="title_activity_notifications_history">NotificationsHistoryActivity</string>
+    <string name="notifications_history_activity_header">Notifications</string>
+    <string name="default_notification_channel_name">Default notification channel</string>
+</resources>
