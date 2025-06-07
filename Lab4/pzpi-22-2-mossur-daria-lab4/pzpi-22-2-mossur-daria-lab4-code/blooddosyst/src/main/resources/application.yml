@@ -1,0 +1,28 @@
+server:
+  port: 14675
+  ssl:
+    key-store-type: PKCS12
+    key-store: 'classpath:keystore/certificate.p12'
+    key-store-password: password
+    enabled: true
+    # key-alias: blooddo
+
+spring:
+  application.name: blooddosyst
+  datasource:
+    url: 'jdbc:postgresql://localhost:8119/blooddo'
+    username: blooddouser
+    password: blooddopass2
+    driver-class-name: 'org.postgresql.Driver'
+  jpa.hibernate.ddl-auto: none
+  mvc.problemdetails.enabled: true
+  sql.init.mode: always
+
+blooddo:
+  auth:
+    secret-key: 'Gv6+XuPRJOdPVdrYV/YAUyWrLi+l4mgYz3vc7lGv01s='
+  smart-solutions:
+    url: https://api.smartsolutions.com/v2/devices
+    secret: 'AIzaSyCqhjgrPTPSOFyLyos5gfN47TJ0HnNA_LA'
+
+logging.level.: DEBUG
